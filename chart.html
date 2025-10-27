@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart</title>
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <style>
+        .cart-container {
+            width: 80%;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+        }
+        .cart-header, .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .cart-header {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .cart-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .cart-item img {
+            max-width: 100px;
+        }
+        .cart-item p {
+            margin: 0;
+        }
+        .cart-item .description {
+            flex: 2;
+            padding: 0 10px;
+        }
+        .cart-item .price, .cart-item .qty, .cart-item .total {
+            flex: 1;
+            text-align: center;
+        }
+        .cart-item .qty input {
+            width: 50px;
+            text-align: center;
+        }
+        .update-btn, .remove-btn {
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="cart-container">
+    <h1>Shopping Cart</h1>
+    <div class="cart-header">
+        <div>Remove</div>
+        <div>Image</div>
+        <div class="description">Product Description</div>
+        <div class="price">Price</div>
+        <div class="qty">Qty</div>
+        <div class="total">Total</div>
+    </div>
+
+    <div id="cart-items"></div>
+
+    <div style="margin-top: 20px;">
+        <strong>Grand Total: <span id="grand-total">$0.00</span></strong>
+    </div>
+
+    <button class="update-btn" onclick="updateCartFromPage()">UPDATE QTY</button>
+    <button class="remove-btn" onclick="removeItems()">REMOVE</button>
+
+    <div style="margin-top: 20px;">
+        <button class="btn btn-danger" onclick="checkout()">CHECKOUT NOW &gt;&gt;&gt;</button>
+    </div>
+    
+</div>
+
+<script src="cart.js"></script>
+</body>
+</html>

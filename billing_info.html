@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Information</title>
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/css/font-awesome.min.css" rel="stylesheet" />
+    <style>
+        .billing-container {
+            width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .billing-address {
+            flex: 1;
+            padding-right: 20px;
+        }
+        .payment-options {
+            flex: 1;
+            padding-left: 20px;
+            border-left: 1px solid #ddd;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .payment-option {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .payment-option label {
+            margin-left: 10px;
+            font-weight: normal;
+        }
+        .payment-option img {
+            height: 30px;
+            margin-left: 10px;
+        }
+        .btn-checkout {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+        }
+        #credit-card-form {
+            display: none; /* Initially hidden */
+            margin-top: 15px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #card-element, #sq-card-container {
+            border: 1px solid #ccc;
+            padding: 10px 12px;
+            border-radius: 4px;
+            background-color: #fff;
+            margin-top: 10px;
+        }
+        #card-errors, #square-card-errors {
+            color: #a94442;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="billing-container">
+    <div class="billing-address">
+        <h2>Billing address</h2>
+        <form id="checkout-form">
+            <div class="row">
+                <div class="col-md-6 form-group">
+                    <label for="firstName">First name</label>
+                    <input type="text" class="form-control" id="firstName" placeholder="First name" required>
+                </div>
+                <div class="col-md-6 form-group">
+                    <label for="lastName">Last name</label>
+                    <input type="text" class="form-control" id="lastName" placeholder="Last name" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label for="address">Address</label>
+                <input type="text" class="form-control" id="address" placeholder="1234 Main St" required>
+            </div>
+            <div class="form-group">
+                <label for="address2">Address 2 (Optional)</label>
+                <input type="text" class="form-control" id="address2" placeholder="Apartment or suite">
+            </div>
+            <div class="row">
+                <div class="col-md-4 form-group">
+                    <label for="country">Country</label>
+                    <select class="form-control" id="country" required>
+                        <option value="">Choose...</option>
+                        <option>Australia</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="state">State</label>
+                    <select class="form-control" id="state" required>
+                        <option value="">Choose...</option>
+                        <option>Victoria</option>
+                    </select>
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="zip">Zip</label>
+                    <input type="text" class="form-control" id="zip" placeholder="" required>
+                </div>
+            </div>
+            <hr>
+            <div class="form-group">
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox"> Shipping address is the same as my billing address
+                    </label>
+                </div>
+                <div class="checkbox">
+                    <label>
+                        <input type="checkbox"> Save this information for next time
+                    </label>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="payment-options">
+        <h2>Select A Payment Option</h2>
+        <div class="payment-option">
+            <input type="radio" id="paypal" name="paymentMethod" required>
+            <label for="paypal">PayPal <img src="assets/img/paypal.avif" alt="PayPal"></label>
+        </div>
+        <div class="payment-option">
+            <input type="radio" id="gpay" name="paymentMethod">
+            <label for="gpay">G Pay <img src="assets/img/gpay.png" alt="Google Pay"></label>
+        </div>
+        <div class="payment-option">
+            <input type="radio" id="credit-card" name="paymentMethod">
+            <label for="credit-card">Credit/Debit Card (Stripe) <img src="assets/img/stripe.png" alt="Stripe"></label>
+        </div>
+        <div class="payment-option">
+            <input type="radio" id="square-card" name="paymentMethod">
+            <label for="square-card">Credit/Debit Card (Square) <img src="assets/img/square.png" alt="Square"></label>
+        </div>
+        
+        <div id="checkout-container" style="display: none; width: 100%; min-height: 600px;"></div>
+
+        <div id="square-payment-form" style="display: none; margin-top: 15px;">
+            <div id="sq-card-container"></div>
+            <div id="square-card-errors"></div>
+        </div>
+
+        <hr>
+        <button class="btn btn-primary btn-checkout" id="checkout-button">Continue to checkout</button>
+    </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script src="https://sandbox.web.squarecdn.com/v1/square.js"></script>
+<script src="cart.js"></script>
+<script async src="https://pay.google.com/gp/p/js/pay.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Stripe Initialization
+        const stripe = Stripe('pk_test_51S6mx43RZaARmGsQlWlTYYqNZf1ohCkf7patUTN9gqeUauhnNPS4JxTZB6OPv8DEeIifvfKJUyYK7i4drpOu9yKA00gxeJ8Nmh');
+
+        // Square Initialization
+        let squarePayments = null;
+        let squareCard = null;
+
+        // Event listener to show/hide the payment forms
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', async () => {
+                const stripeContainer = document.getElementById('checkout-container');
+                const squareForm = document.getElementById('square-payment-form');
+                
+                // Hide all payment forms initially
+                stripeContainer.style.display = 'none';
+                squareForm.style.display = 'none';
+
+                if (radio.id === 'square-card') {
+                    squareForm.style.display = 'block';
+                    // Initialize and attach Square card form
+                    if (!squarePayments) {
+                        try {
+                            // Replace with your actual Square application ID and location ID
+                            const appId = 'sandbox-sq0idb-d7QSfaR3gsMnFdKnsyfN_A';
+                            const locationId = 'L5FT5VENVA3Z4';
+                            squarePayments = Square.payments(appId, locationId);
+                            squareCard = await squarePayments.card();
+                            await squareCard.attach('#sq-card-container');
+                        } catch (e) {
+                            console.error('Failed to initialize Square:', e);
+                            document.getElementById('square-card-errors').textContent = 'Error initializing Square payments. Please try another method.';
+                        }
+                    }
+                }
+            });
+        });
+
+        // Event listener for the main checkout button
+        const checkoutButton = document.getElementById('checkout-button');
+        checkoutButton.addEventListener('click', async () => {
+            if (!validateBillingForm()) {
+                return;
+            }
+
+            const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked');
+            if (!selectedPaymentMethod) {
+                alert('Please select a payment method.');
+                return;
+            }
+
+            if (selectedPaymentMethod.id === 'paypal') {
+                handlePayPalCheckout();
+            } else if (selectedPaymentMethod.id === 'gpay') {
+                onGooglePaymentButtonClicked();
+            } else if (selectedPaymentMethod.id === 'credit-card') {
+                // Initialize and mount Stripe embedded checkout on button click
+                document.getElementById('checkout-container').style.display = 'block';
+                initializeStripeCheckout(stripe);
+            } else if (selectedPaymentMethod.id === 'square-card') {
+                if (!squareCard) {
+                     alert('Square payment form is not initialized. Please try again.');
+                     return;
+                }
+                const statusContainer = document.getElementById('square-card-errors');
+                statusContainer.innerHTML = '';
+                try {
+                    const result = await squareCard.tokenize();
+                    if (result.status === 'OK') {
+                        console.log(`Square Payment token is ${result.token}`);
+                        handleSquareCheckout(result.token);
+                    } else {
+                        let errorMessage = `Tokenization failed with status: ${result.status}`;
+                        if (result.errors) {
+                          errorMessage += ` and errors: ${JSON.stringify(
+                            result.errors
+                          )}`;
+                        }
+                        throw new Error(errorMessage);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    statusContainer.innerHTML = 'Error processing payment. Please check your card details.';
+                }
+            }
+        });
+
+        // Square-specific checkout function
+        async function handleSquareCheckout(token) {
+            const cart = JSON.parse(localStorage.getItem('shoppingCart'));
+            try {
+                const response = await fetch('http://localhost:4242/process-square-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ paymentToken: token, cart: cart }),
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    // Redirect to success page with Square payment details
+                    window.location.href = `success.php?payment_method=square&txn_id=${result.transaction_id}`;
+                } else {
+                    console.error('Payment failed on server:', result.errors);
+                    document.getElementById('square-card-errors').textContent = 'Payment failed. Please try again or contact support.';
+                }
+            } catch (error) {
+                console.error('Error in Square checkout:', error);
+                document.getElementById('square-card-errors').textContent = 'An unexpected error occurred. Please try again.';
+            }
+        }
+
+        // Form validation function
+        function validateBillingForm() {
+            const requiredFields = ['firstName', 'lastName', 'email', 'address', 'country', 'state', 'zip'];
+            for (const field of requiredFields) {
+                const input = document.getElementById(field);
+                if (!input.value.trim()) {
+                    alert('Please fill out all required billing address fields.');
+                    input.focus();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        async function initializeStripeCheckout(stripe) {
+            try {
+                const fetchClientSecret = async () => {
+                    const response = await fetch('http://localhost:4242/create-checkout-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ cart: JSON.parse(localStorage.getItem('shoppingCart')) }),
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const data = await response.json();
+                    if (!data.clientSecret) {
+                        throw new Error("No clientSecret in server response");
+                    }
+                    return data.clientSecret;
+                };
+
+                const checkout = await stripe.initEmbeddedCheckout({
+                    fetchClientSecret,
+                });
+                checkout.mount('#checkout-container');
+
+            } catch (error) {
+                console.error('Checkout initialization error:', error);
+                document.getElementById('card-errors').textContent = 'An error occurred. Please try again.';
+            }
+        }
+
+        function handlePayPalCheckout() {
+            const form = document.createElement('form');
+            form.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+            form.method = 'post';
+            const cart = JSON.parse(localStorage.getItem('shoppingCart'));
+            form.innerHTML = `
+                <input type="hidden" name="cmd" value="_cart">
+                <input type="hidden" name="upload" value="1">
+                <input type="hidden" name="business" value="sb-erzfp45430872@business.example.com">
+                <input type="hidden" name="currency_code" value="AUD">
+                <input type="hidden" name="return" value="http://localhost/SecurePayment/success.php">
+                <input type="hidden" name="cancel_return" value="http://localhost/SecurePayment/cancel.php">
+            `;
+            let itemNumber = 1;
+            for (const id in cart) {
+                const item = cart[id];
+                form.innerHTML += `
+                    <input type="hidden" name="item_name_${itemNumber}" value="${item.name}">
+                    <input type="hidden" name="amount_${itemNumber}" value="${item.price}">
+                    <input type="hidden" name="quantity_${itemNumber}" value="${item.qty}">
+                `;
+                itemNumber++;
+            }
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Google Pay API-related helper functions
+        let paymentsClient = null;
+        const baseRequest = { apiVersion: 2, apiVersionMinor: 0 };
+        const tokenizationSpecification = {
+            type: 'PAYMENT_GATEWAY',
+            parameters: {
+                'gateway': 'example',
+                'gatewayMerchantId': 'exampleGatewayMerchantId'
+            }
+        };
+        const allowedCardNetworks = ["AMEX", "DISCOVER", "INTERAC", "JCB", "MASTERCARD", "VISA"];
+        const allowedCardAuthMethods = ["PAN_ONLY", "CRYPTOGRAM_3DS"];
+        const baseCardPaymentMethod = {
+            type: 'CARD',
+            parameters: { allowedAuthMethods: allowedCardAuthMethods, allowedCardNetworks: allowedCardNetworks }
+        };
+        const cardPaymentMethod = Object.assign({}, baseCardPaymentMethod, {
+            tokenizationSpecification: tokenizationSpecification
+        });
+        
+        // Google Pay functions
+        function onGooglePaymentButtonClicked() {
+            const paymentDataRequest = getGooglePaymentDataRequest();
+            const paymentsClient = getGooglePaymentsClient();
+            paymentsClient.loadPaymentData(paymentDataRequest)
+                .then(function(paymentData) {
+                    processPayment(paymentData);
+                })
+                .catch(function(err) {
+                    console.error(err);
+                });
+        }
+
+        function getGooglePaymentsClient() {
+            if (paymentsClient === null) {
+                paymentsClient = new google.payments.api.PaymentsClient({
+                    environment: 'TEST',
+                    paymentDataCallbacks: {
+                        onPaymentAuthorized: onPaymentAuthorized
+                    }
+                });
+            }
+            return paymentsClient;
+        }
+
+        function getGooglePaymentDataRequest() {
+            const paymentDataRequest = Object.assign({}, baseRequest);
+            paymentDataRequest.allowedPaymentMethods = [cardPaymentMethod];
+            paymentDataRequest.transactionInfo = getGoogleTransactionInfo();
+            paymentDataRequest.merchantInfo = {
+                merchantName: 'Alice\'s Electronic Bike Shop'
+            };
+            paymentDataRequest.callbackIntents = ["PAYMENT_AUTHORIZATION"];
+            return paymentDataRequest;
+        }
+
+        function getGoogleTransactionInfo() {
+            let grandTotal = 0;
+            const displayItems = [];
+            const cart = JSON.parse(localStorage.getItem('shoppingCart'));
+            for (const id in cart) {
+                const item = cart[id];
+                const itemTotal = item.price * item.qty;
+                grandTotal += itemTotal;
+                displayItems.push({
+                    label: item.name,
+                    type: "SUBTOTAL",
+                    price: item.price.toFixed(2),
+                });
+            }
+            return {
+                displayItems: displayItems,
+                countryCode: 'AU',
+                currencyCode: "AUD",
+                totalPriceStatus: "FINAL",
+                totalPrice: grandTotal.toFixed(2),
+                totalPriceLabel: "Total",
+            };
+        }
+
+        function onPaymentAuthorized(paymentData) {
+            return new Promise(function(resolve, reject) {
+                processPayment(paymentData)
+                    .then(function() {
+                        resolve({
+                            transactionState: 'SUCCESS'
+                        });
+                    })
+                    .catch(function() {
+                        resolve({
+                            transactionState: 'ERROR',
+                            error: {
+                                intent: 'PAYMENT_AUTHORIZATION',
+                                message: 'Payment failed, please try again.',
+                                reason: 'PAYMENT_DATA_INVALID'
+                            }
+                        });
+                    });
+            });
+        }
+
+        function processPayment(paymentData) {
+            return new Promise(function(resolve, reject) {
+                console.log('Processing Google Pay payment...');
+                const paymentToken = paymentData.paymentMethodData.tokenizationData.token;
+                setTimeout(() => {
+                    console.log('Payment successful!');
+                    window.location.href = 'success.php?payment_method=gpay';
+                    resolve({});
+                }, 1500);
+            });
+        }
+    });
+</script>
+</body>
+</html>
