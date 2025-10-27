@@ -12,9 +12,9 @@ const port = process.env.PORT || 4242;
 
 // Square credentials (replace with your actual credentials from the Developer Dashboard)
 // In a production app, use environment variables for security
-const SQUARE_APPLICATION_ID = 'sandbox-sq0idb-d7QSfaR3gsMnFdKnsyfN_A';
-const SQUARE_ACCESS_TOKEN = 'EAAAl3a99U2KeJL--GsaitZh67BjjoqfwTbka3EXmqgVemkUzlSMDv2r3tfKW71q';
-const SQUARE_LOCATION_ID = 'L5FT5VENVA3Z4';
+const SQUARE_APPLICATION_ID = '';
+const SQUARE_ACCESS_TOKEN = '';
+const SQUARE_LOCATION_ID = '';
 
 // Middleware to parse JSON bodies
 app.use(bodyParser.json());
