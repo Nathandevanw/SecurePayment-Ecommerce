@@ -1,7 +1,7 @@
 // server.js
 
 const express = require('express');
-const stripe = require('stripe')('sk_test_51S6mx43RZaARmGsQvaeKhNYUQWrwHNDya9tG9fxrJJHMU7E2Zv3YBiSxAbAL7wCXkJ1FVuX5c8vUuptrgcoIPQZa00mVDFAiaP');
+const stripe = require('stripe')('');
 const bodyParser = require('body-parser');
 const axios = require('axios');
 const crypto = require('crypto');
